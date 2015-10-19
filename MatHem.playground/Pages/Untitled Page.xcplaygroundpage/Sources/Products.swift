@@ -1,14 +1,19 @@
-class Product {
+import Foundation
+
+public class Product {
     let name: String
     let price: Double
     let product_id: Int
-    init(name, price, product_id) {
+    let words: [String]
+    
+    init(name: String, price: Double, product_id: Int) {
         self.name = name
         self.price = price
         self.product_id = product_id
+        self.words = name.componentsSeparatedByString(" ")
     }
 }
-let products = [
+public let products = [
     Product(name: "Adzukibönor EKO/KRAV 500g Saltå Kvarn", price: 29.95, product_id: 42095),
     Product(name: "Bean Boozled Spinner Gift Box 100g Jelly Belly Beans", price: 129.95, product_id: 108846),
     Product(name: "Dammsugare Blå 800W Bosch", price: 2899, product_id: 111294),

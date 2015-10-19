@@ -9,9 +9,15 @@ var SE_qwerty = [
     "     ",
 ]
 
-var row_x_offsets = [
+func k(s: String) -> UInt8 {
+    return s.utf8.first!
+}
+
+let SPACE = k(" ")
+
+let row_x_offsets = [
     0.0,
-    0.5,
+    1+0.5,
     2.5 + 0.25,
     1.5 + 0.25 + 0.5,
     4.5 + 0.25 + 0.5,
@@ -27,6 +33,8 @@ class Coordinate {
     }
 }
 
+let INVALID_COORDINATE = Coordinate(x: -100, y: -100)
+
 let SUFFIX_BADNESS = 2.0
 let MAX_BADNESS = 10.0
 
@@ -41,7 +49,7 @@ func coordinates_for_space(other_coordinates: Coordinate) -> Coordinate {
     var result: Coordinate? = nil
     let row_index = SE_qwerty.count - 1
     let row = SE_qwerty.last!
-    for (col_index, _) in row.characters.enumerate() {
+    for (col_index, _) in row.utf8.enumerate() {
         let foo = Coordinate(x: row_x_offsets[row_index] + Double(col_index), y: Double(row_index))
         let foo_d = distance(foo, b: other_coordinates)
         if foo_d < d {
@@ -55,60 +63,60 @@ func coordinates_for_space(other_coordinates: Coordinate) -> Coordinate {
     return result!
 }
 
-func distance_to_space(c: Character) -> Double {
+func distance_to_space(c: UInt8) -> Double {
     let a = coordinates(c)
     return distance(a, b: coordinates_for_space(a))
 }
 
-func coordinates(c: Character) -> Coordinate {
+func coordinates(c: UInt8) -> Coordinate {
     for (row_index, row) in SE_qwerty.enumerate() {
-        let index = row.characters.indexOf(c)
+        let index = row.utf8.indexOf(c)
         if index != nil {
-            return Coordinate(x: row_x_offsets[row_index] + Double(row.startIndex.distanceTo(index!)), y: Double(row_index))
+            return Coordinate(x: row_x_offsets[row_index] + Double(row.utf8.startIndex.distanceTo(index!)), y: Double(row_index))
         }
     }
     // TODO: should handle shifted keys too, so 4 and $ is the same
-    assert(false)
+    return INVALID_COORDINATE
 }
 
-func key_distance(c: Character, c2: Character) -> Double {
+func key_distance(c: UInt8, c2: UInt8) -> Double {
     if c == c2 {
         return 0
     }
-    if c == " " {
+    if c == SPACE {
         // flip arguments
         return key_distance(c2, c2: c)
     }
-    if c2 == " " {
+    if c2 == SPACE {
         return distance_to_space(c)
     }
     let a = coordinates(c)
     return distance(a, b: coordinates(c2))
 }
-let diagonal_distance = key_distance("r", c2: "4")
-assert(key_distance("r", c2: "4") == key_distance("r", c2: "5"))
-assert(key_distance("b", c2: "b") == 0)
-assert(key_distance("b", c2: "n") == 1)
-assert(key_distance("b", c2: "v") == 1)
-assert(key_distance("b", c2: "g") == diagonal_distance)
-assert(key_distance(" ", c2: "c") == 1)
-assert(key_distance("c", c2: " ") == 1)
-assert(key_distance(" ", c2: "c") == 1)
-assert(key_distance(" ", c2: "v") == 1)
-assert(key_distance(" ", c2: "b") == 1)
-assert(key_distance(" ", c2: "n") == 1)
-assert(key_distance(" ", c2: "m") == 1)
-assert(key_distance(" ", c2: " ") == 0)
+let diagonal_distance = key_distance(k("r"), c2: k("4"))
+assert(key_distance(k("r"), c2: k("4")) == key_distance(k("r"), c2: k("5")))
+assert(key_distance(k("b"), c2: k("b")) == 0)
+assert(key_distance(k("b"), c2: k("n")) == 1)
+assert(key_distance(k("b"), c2: k("v")) == 1)
+assert(key_distance(k("b"), c2: k("g")) == diagonal_distance)
+assert(key_distance(k(" "), c2: k("c")) == 1)
+assert(key_distance(k("c"), c2: k(" ")) == 1)
+assert(key_distance(k(" "), c2: k("c")) == 1)
+assert(key_distance(k(" "), c2: k("v")) == 1)
+assert(key_distance(k(" "), c2: k("b")) == 1)
+assert(key_distance(k(" "), c2: k("n")) == 1)
+assert(key_distance(k(" "), c2: k("m")) == 1)
+assert(key_distance(k(" "), c2: k(" ")) == 0)
 
 func badness(s: String, s2: String) -> Double {
     var r = 0.0
-    for (c, c2) in zip(s.characters, s2.characters) {
+    for (c, c2) in zip(s.utf8, s2.utf8) {
         r += key_distance(c, c2: c2)
         if r >= MAX_BADNESS {
             return MAX_BADNESS
         }
     }
-    return r + SUFFIX_BADNESS * Double(abs(s.characters.count - s2.characters.count))
+    return r + SUFFIX_BADNESS * Double(abs(s.utf8.count - s2.utf8.count))
 }
 
 assert(badness("bananer", s2: "bananer") == 0)
@@ -157,3 +165,13 @@ func best_match(var s: String) -> (String, Double) {
     }
     return (best, best_badness)
 }
+
+
+printTimeElapsedWhenRunningCode("foo") {
+    let x = best_match("bananer")
+    print("\(x)")
+}
+
+let y = best_match("banan")
+print("\(y)")
+
