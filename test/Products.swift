@@ -1,16 +1,26 @@
 import Foundation
 
+public let encoding = NSISOLatin1StringEncoding
+
+public func enc(s: String) -> [CChar] {
+    let r = s.cStringUsingEncoding(encoding)
+    if r == nil {
+        return [0]
+    }
+    return r!
+}
+
 public class Product {
     let name: String
     let price: Double
     let product_id: Int
-    let words: [String]
+    let words: [[CChar]]
     
     init(name: String, price: Double, product_id: Int) {
         self.name = name
         self.price = price
         self.product_id = product_id
-        self.words = name.lowercaseString.componentsSeparatedByString(" ")
+        self.words = name.lowercaseString.componentsSeparatedByString(" ").map(enc)
     }
 }
 public let products = [

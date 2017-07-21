@@ -1,23 +1,23 @@
 import Cocoa
 import Foundation
 
-var SE_qwerty = [
-    "§1234567890-=",
-    "\tqwertyuiopå¨",
-    "asdfghjklöä'",
-    "`zxcvbnm,./",
-    "     ",
+let SE_qwerty = [
+    enc("§1234567890+´"),
+    enc("\tqwertyuiopå¨"),
+    enc("asdfghjklöä'"),
+    enc("`zxcvbnm,./"),
+    enc("     "),
 ]
 
-func k(s: String) -> UInt8 {
-    return s.utf8.first!
+func k(s: String) -> CChar {
+    return s.cStringUsingEncoding(encoding)![0]
 }
 
 let SPACE = k(" ")
 
 let row_x_offsets = [
     0.0,
-    1+0.5,
+    0.5,
     2.5 + 0.25,
     1.5 + 0.25 + 0.5,
     4.5 + 0.25 + 0.5,
@@ -49,7 +49,7 @@ func coordinates_for_space(other_coordinates: Coordinate) -> Coordinate {
     var result: Coordinate? = nil
     let row_index = SE_qwerty.count - 1
     let row = SE_qwerty.last!
-    for (col_index, _) in row.utf8.enumerate() {
+    for (col_index, _) in row.enumerate() {
         let foo = Coordinate(x: row_x_offsets[row_index] + Double(col_index), y: Double(row_index))
         let foo_d = distance(foo, b: other_coordinates)
         if foo_d < d {
@@ -63,23 +63,23 @@ func coordinates_for_space(other_coordinates: Coordinate) -> Coordinate {
     return result!
 }
 
-func distance_to_space(c: UInt8) -> Double {
+func distance_to_space(c: CChar) -> Double {
     let a = coordinates(c)
     return distance(a, b: coordinates_for_space(a))
 }
 
-func coordinates(c: UInt8) -> Coordinate {
+func coordinates(c: CChar) -> Coordinate {
     for (row_index, row) in SE_qwerty.enumerate() {
-        let index = row.utf8.indexOf(c)
+        let index = row.indexOf(c)
         if index != nil {
-            return Coordinate(x: row_x_offsets[row_index] + Double(row.utf8.startIndex.distanceTo(index!)), y: Double(row_index))
+            return Coordinate(x: row_x_offsets[row_index] + Double(index!), y: Double(row_index))
         }
     }
     // TODO: should handle shifted keys too, so 4 and $ is the same
     return INVALID_COORDINATE
 }
 
-func key_distance(c: UInt8, c2: UInt8) -> Double {
+func key_distance(c: CChar, c2: CChar) -> Double {
     if c == c2 {
         return 0
     }
@@ -108,26 +108,30 @@ assert(key_distance(k(" "), c2: k("n")) == 1)
 assert(key_distance(k(" "), c2: k("m")) == 1)
 assert(key_distance(k(" "), c2: k(" ")) == 0)
 
-func badness(s: String, s2: String) -> Double {
+func badness(s: [CChar], s2: [CChar]) -> Double {
     var r = 0.0
-    for (c, c2) in zip(s.utf8, s2.utf8) {
+    for (c, c2) in zip(s, s2) {
+        if c == 0 || c2 == 0 {
+            // ignore null terminated crap
+            continue
+        }
         r += key_distance(c, c2: c2)
         if r >= MAX_BADNESS {
             return MAX_BADNESS
         }
     }
-    return r + SUFFIX_BADNESS * Double(abs(s.utf8.count - s2.utf8.count))
+    return r + SUFFIX_BADNESS * Double(abs(s.count - s2.count))
 }
 
-assert(badness("bananer", s2: "bananer") == 0)
-assert(badness("nananer", s2: "bananer") == 1)
-assert(badness("bananer", s2: "bananew") == 2)
-assert(badness("bananer", s2: "banane5") == diagonal_distance)
-assert(badness("bananer", s2: "banane4") == diagonal_distance)
-assert(badness("bananer", s2: "bananey") == 2)
-assert(badness("aa", s2: "a") == SUFFIX_BADNESS)
-assert(badness("aaa", s2: "aa") == SUFFIX_BADNESS)
-assert(badness("aaaa", s2: "aa") == SUFFIX_BADNESS * 2)
+assert(badness(enc("bananer"), s2: enc("bananer")) == 0)
+assert(badness(enc("nananer"), s2: enc("bananer")) == 1)
+assert(badness(enc("bananer"), s2: enc("bananew")) == 2)
+assert(badness(enc("bananer"), s2: enc("banane5")) == diagonal_distance)
+assert(badness(enc("bananer"), s2: enc("banane4")) == diagonal_distance)
+assert(badness(enc("bananer"), s2: enc("bananey")) == 2)
+assert(badness(enc("aa"), s2: enc("a")) == SUFFIX_BADNESS)
+assert(badness(enc("aaa"), s2: enc("aa")) == SUFFIX_BADNESS)
+assert(badness(enc("aaaa"), s2: enc("aa")) == SUFFIX_BADNESS * 2)
 
 ///////////
 func printTimeElapsedWhenRunningCode(title:String, operation:()->()) {
@@ -147,13 +151,12 @@ func timeElapsedInSecondsWhenRunningCode(operation:()->()) -> Double {
 
 
 
-func best_match(var s: String) -> (String, Double) {
-    s = s.lowercaseString
+func best_match(s: [CChar]) -> (String, Double) {
     var best: String = "<No hit>"
     var best_badness = 10000.0
     for product in products {
         for word in product.words {
-            if word == "" {
+            if word[0] == 0 { // null terminated :(
                 continue
             }
             let b = badness(word, s2: s)
@@ -167,11 +170,19 @@ func best_match(var s: String) -> (String, Double) {
 }
 
 
-printTimeElapsedWhenRunningCode("foo") {
-    let x = best_match("bananer")
+//printTimeElapsedWhenRunningCode("bananer") {
+//    let x = best_match("bananer")
+//    print("\(x)")
+//}
+
+
+printTimeElapsedWhenRunningCode("nsnsnwe") {
+    let s = enc("nsnsnwe".lowercaseString)
+    for i in 0..<500 {
+        best_match(s)
+    }
+    let x = best_match(s)
     print("\(x)")
 }
 
-let y = best_match("banan")
-print("\(y)")
 
