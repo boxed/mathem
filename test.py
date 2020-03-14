@@ -1,6 +1,5 @@
-# coding=utf-8
-from __future__ import unicode_literals
-import cPickle
+import pickle
+from functools import lru_cache
 from math import sqrt
 
 US_qwerty = [
@@ -66,6 +65,7 @@ def distance(a, b):
     return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
 
 
+@lru_cache(maxsize=10000)
 def key_distance(c, c2):
     if c == c2:
         return 0
@@ -73,6 +73,7 @@ def key_distance(c, c2):
         c, c2 = c2, c
     a = coordinates(c)
     return distance(a, coordinates(c2, a))
+
 
 diagonal_distance = key_distance('r', '4')
 assert key_distance('r', '4') == key_distance('r', '5')
@@ -116,7 +117,11 @@ assert badness('aaaa', 'aa') == SUFFIX_BADNESS * 2
 
 
 def load_products():
-    return [(name, name.lower().split(' '), price, product_id) for name, price, product_id in cPickle.load(open('products.pickle'))]
+    return [
+        (name, name.lower().split(' '), price, product_id)
+        for name, price, product_id in pickle.load(open('products.pickle', 'rb'))
+    ]
+
 
 products = load_products()
 
@@ -135,13 +140,14 @@ def best_match(s):
                 best = name
     return best, best_badness
 
-print best_match('banan')
-print best_match('bananer')
-print best_match('nananer')
-print best_match('nanan')
+
+print(best_match('banan'))
+print(best_match('bananer'))
+print(best_match('nananer'))
+print(best_match('nanan'))
 
 from datetime import datetime
 start = datetime.now()
 best_match('nanan')
 
-print datetime.now() - start
+print(datetime.now() - start)
