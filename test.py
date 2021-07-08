@@ -118,7 +118,7 @@ assert badness('aaaa', 'aa') == SUFFIX_BADNESS * 2
 
 def load_products():
     return [
-        (name, name.lower().split(' '), price, product_id)
+        (name, filter(None, name.lower().split(' ')), price, product_id)
         for name, price, product_id in pickle.load(open('products.pickle', 'rb'))
     ]
 
@@ -132,8 +132,6 @@ def best_match(s):
     best_badness = 10000
     for name, words, price, product_id in products:
         for word in words:
-            if not word:
-                continue
             b = badness(word, s)
             if b < best_badness:
                 best_badness = b

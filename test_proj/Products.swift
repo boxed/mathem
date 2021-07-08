@@ -1,9 +1,9 @@
 import Foundation
 
-public let encoding = NSISOLatin1StringEncoding
+public let encoding = String.Encoding.isoLatin1
 
 public func enc(s: String) -> [CChar] {
-    let r = s.cStringUsingEncoding(encoding)
+    let r = s.cString(using: encoding)
     if r == nil {
         return [0]
     }
@@ -14,13 +14,13 @@ public class Product {
     let name: String
     let price: Double
     let product_id: Int
-    let words: [[CChar]]
+    let words: [String]
     
     init(name: String, price: Double, product_id: Int) {
         self.name = name
         self.price = price
         self.product_id = product_id
-        self.words = name.lowercaseString.componentsSeparatedByString(" ").map(enc)
+        self.words = name.lowercased().components(separatedBy: " ")//.map(enc)
     }
 }
 public let products = [
